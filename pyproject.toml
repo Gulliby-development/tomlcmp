@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tomlcmp"
+version = "0.1.0"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+readme = "README.md"
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+
+[project.scripts]
+tomlcmp = "tomlcmp.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tomlcmp"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
