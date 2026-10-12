@@ -40,6 +40,30 @@ def test_readme_example_matches_cli_output(tmp_path, capsys):
     assert NEW.strip() in readme
 
 
+def test_readme_reordered_arrays_example_matches_cli_output(tmp_path, capsys):
+    old_text = '[project]\ndependencies = ["a", "b", "c"]\n'
+    new_text = '[project]\ndependencies = ["c", "a", "b"]\n'
+    plain = (
+        '~ project.dependencies: ["a", "b", "c"] -> ["c", "a", "b"]\n'
+        "0 added, 0 removed, 1 changed\n"
+    )
+    unordered = "0 added, 0 removed, 0 changed\n"
+    old = tmp_path / "old.toml"
+    new = tmp_path / "new.toml"
+    old.write_text(old_text, encoding="utf-8")
+    new.write_text(new_text, encoding="utf-8")
+    assert main([str(old), str(new)]) == 1
+    assert capsys.readouterr().out == plain
+    assert main([str(old), str(new), "--unordered", "project.dependencies"]) == 0
+    assert capsys.readouterr().out == unordered
+    readme = _readme().replace("\r\n", "\n")
+    assert "### Reordered arrays" in readme
+    assert old_text.strip() in readme
+    assert new_text.strip() in readme
+    assert plain.strip() in readme
+    assert unordered.strip() in readme
+
+
 def test_readme_commands():
     readme = _readme()
     assert "pip install -e ." in readme

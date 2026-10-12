@@ -79,7 +79,32 @@ def _ignored(path: str, ignore: Sequence[str]) -> bool:
     return any(path == entry or path.startswith(entry + ".") for entry in ignore)
 
 
-def diff_toml(old: dict, new: dict, ignore: Sequence[str] = ()) -> Diff:
+def _multiset_equal(a: list, b: list) -> bool:
+    if len(a) != len(b):
+        return False
+    remaining = list(b)
+    for item in a:
+        for i, other in enumerate(remaining):
+            if _equal(item, other):
+                del remaining[i]
+                break
+        else:
+            return False
+    return True
+
+
+def _values_equal(path: str, a: object, b: object, unordered: Sequence[str]) -> bool:
+    if isinstance(a, list) and isinstance(b, list) and _ignored(path, unordered):
+        return _multiset_equal(a, b)
+    return _equal(a, b)
+
+
+def diff_toml(
+    old: dict,
+    new: dict,
+    ignore: Sequence[str] = (),
+    unordered: Sequence[str] = (),
+) -> Diff:
     """Compare two parsed TOML documents by value."""
     flat_old = {p: v for p, v in flatten(old).items() if not _ignored(p, ignore)}
     flat_new = {p: v for p, v in flatten(new).items() if not _ignored(p, ignore)}
@@ -88,6 +113,6 @@ def diff_toml(old: dict, new: dict, ignore: Sequence[str] = ()) -> Diff:
     changed = [
         Changed(p, flat_old[p], flat_new[p])
         for p in sorted(flat_old.keys() & flat_new.keys())
-        if not _equal(flat_old[p], flat_new[p])
+        if not _values_equal(p, flat_old[p], flat_new[p], unordered)
     ]
     return Diff(added=added, removed=removed, changed=changed)
