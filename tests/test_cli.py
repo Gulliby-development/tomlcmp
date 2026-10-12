@@ -122,6 +122,39 @@ def test_ignore_option(tmp_path, capsys):
     assert capsys.readouterr().out == "0 added, 0 removed, 0 changed\n"
 
 
+REORDER_OLD = '[project]\ndependencies = ["a", "b", "c"]\n'
+REORDER_NEW = '[project]\ndependencies = ["c", "a", "b"]\n'
+
+
+def test_unordered_readme_example(tmp_path, capsys):
+    old = write(tmp_path, "old.toml", REORDER_OLD)
+    new = write(tmp_path, "new.toml", REORDER_NEW)
+    assert main([old, new]) == 1
+    assert capsys.readouterr().out == (
+        '~ project.dependencies: ["a", "b", "c"] -> ["c", "a", "b"]\n'
+        "0 added, 0 removed, 1 changed\n"
+    )
+    assert main([old, new, "--unordered", "project.dependencies"]) == 0
+    assert capsys.readouterr().out == "0 added, 0 removed, 0 changed\n"
+
+
+def test_unordered_repeated(tmp_path, capsys):
+    old = write(tmp_path, "old.toml", "x = [1, 2]\ny = [3, 4]\n")
+    new = write(tmp_path, "new.toml", "x = [2, 1]\ny = [4, 3]\n")
+    assert main([old, new, "--unordered", "x"]) == 1
+    capsys.readouterr()
+    assert main([old, new, "--unordered", "x", "--unordered", "y"]) == 0
+    assert capsys.readouterr().out == "0 added, 0 removed, 0 changed\n"
+
+
+def test_unordered_json(tmp_path, capsys):
+    old = write(tmp_path, "old.toml", REORDER_OLD)
+    new = write(tmp_path, "new.toml", REORDER_NEW)
+    args = [old, new, "--format", "json", "--unordered", "project.dependencies"]
+    assert main(args) == 0
+    assert capsys.readouterr().out == EMPTY_JSON
+
+
 def test_invalid_toml(tmp_path, capsys):
     old = write(tmp_path, "old.toml", "a b c\n")
     new = write(tmp_path, "new.toml", "a = 1\n")

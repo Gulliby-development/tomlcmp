@@ -19,7 +19,7 @@ pip install -e .
 ## Usage
 
 ```
-tomlcmp OLD NEW [--format text|json] [--ignore PATH]...
+tomlcmp OLD NEW [--format text|json] [--ignore PATH]... [--unordered PATH]...
 ```
 
 `old.toml`:
@@ -52,6 +52,35 @@ requires-python = ">=3.11"
 
 `+` is an added key, `-` a removed one, `~` a changed one. It also runs as `python -m tomlcmp old.toml new.toml`. With `--format json` the same result is printed as JSON.
 
+### Reordered arrays
+
+`old.toml`:
+
+```toml
+[project]
+dependencies = ["a", "b", "c"]
+```
+
+`new.toml`:
+
+```toml
+[project]
+dependencies = ["c", "a", "b"]
+```
+
+`tomlcmp old.toml new.toml` prints exactly these lines and exits with code 1:
+
+```
+~ project.dependencies: ["a", "b", "c"] -> ["c", "a", "b"]
+0 added, 0 removed, 1 changed
+```
+
+`tomlcmp old.toml new.toml --unordered project.dependencies` prints exactly this line and exits with code 0:
+
+```
+0 added, 0 removed, 0 changed
+```
+
 ### Library
 
 ```python
@@ -77,6 +106,7 @@ With the files above this prints `project.dependencies ['a', 'b'] ['a', 'b', 'c'
 |---|---|
 | `--format text\|json` | Output format, default `text`. |
 | `--ignore PATH` | Dotted path to skip, repeatable. `project` skips `project.version` but not `project2.x`. Keys with characters other than `A-Za-z0-9_-` are JSON-quoted, e.g. `tool."a.b".x`. |
+| `--unordered PATH` | Repeatable. Compares the arrays at that path, or under that table, as multisets, ignoring element order. Same path rules as `--ignore`. |
 
 ### Exit codes
 

@@ -127,3 +127,98 @@ def test_ignore_quoted_key_syntax():
     new = {"tool": {"a.b": {"x": 2}}, "y": 2}
     d = diff_toml(old, new, ignore=['tool."a.b"'])
     assert [c.path for c in d.changed] == ["y"]
+
+
+def test_unordered_reordered_equal_and_default_changed():
+    old = {"x": ["a", "b", "c"]}
+    new = {"x": ["c", "a", "b"]}
+    assert diff_toml(old, new, unordered=["x"]) == Diff([], [], [])
+    assert diff_toml(old, new).changed == [Changed("x", ["a", "b", "c"], ["c", "a", "b"])]
+
+
+def test_unordered_duplicates_counted():
+    old = {"x": ["a", "a", "b"]}
+    new = {"x": ["a", "b", "b"]}
+    d = diff_toml(old, new, unordered=["x"])
+    assert [c.path for c in d.changed] == ["x"]
+
+
+def test_unordered_different_length_changed():
+    d = diff_toml({"x": [1, 2]}, {"x": [1, 2, 2]}, unordered=["x"])
+    assert [c.path for c in d.changed] == ["x"]
+
+
+def test_unordered_int_float_equal():
+    assert diff_toml({"x": [1]}, {"x": [1.0]}, unordered=["x"]) == Diff([], [], [])
+
+
+def test_unordered_bool_int_different():
+    d = diff_toml({"x": [True]}, {"x": [1]}, unordered=["x"])
+    assert [c.path for c in d.changed] == ["x"]
+
+
+def test_unordered_nan_matches_nan():
+    nan = float("nan")
+    assert diff_toml({"x": [nan, 1]}, {"x": [1, nan]}, unordered=["x"]) == Diff([], [], [])
+
+
+def test_unordered_nested_list_inner_order_matters():
+    old = {"x": [[1, 2], [3]]}
+    new = {"x": [[3], [2, 1]]}
+    d = diff_toml(old, new, unordered=["x"])
+    assert [c.path for c in d.changed] == ["x"]
+    same = diff_toml({"x": [[1, 2], [3]]}, {"x": [[3], [1, 2]]}, unordered=["x"])
+    assert same == Diff()
+
+
+def test_unordered_boundary_project_vs_project2():
+    old = {"project": {"dependencies": ["a", "b"]}, "project2": {"x": ["a", "b"]}}
+    new = {"project": {"dependencies": ["b", "a"]}, "project2": {"x": ["b", "a"]}}
+    d = diff_toml(old, new, unordered=["project"])
+    assert [c.path for c in d.changed] == ["project2.x"]
+
+
+def test_unordered_table_prefix_covers_several_arrays():
+    old = {"t": {"a": [1, 2], "b": {"c": ["x", "y"]}}}
+    new = {"t": {"a": [2, 1], "b": {"c": ["y", "x"]}}}
+    assert diff_toml(old, new, unordered=["t"]) == Diff([], [], [])
+
+
+def test_unordered_non_matching_entry_has_no_effect():
+    old = {"x": [1, 2]}
+    new = {"x": [2, 1]}
+    d = diff_toml(old, new, unordered=["nothing.here"])
+    assert d.changed == [Changed("x", [1, 2], [2, 1])]
+
+
+def test_ignore_wins_over_unordered():
+    old = {"x": [1, 2], "y": [1, 2]}
+    new = {"x": [3], "y": [2, 1]}
+    d = diff_toml(old, new, ignore=["x"], unordered=["x", "y"])
+    assert d == Diff([], [], [])
+
+
+def test_unordered_non_permutation_reports_original_order():
+    old = {"x": ["b", "a"]}
+    new = {"x": ["c", "a"]}
+    d = diff_toml(old, new, unordered=["x"])
+    assert d.changed == [Changed("x", ["b", "a"], ["c", "a"])]
+
+
+def test_unordered_added_and_removed_paths():
+    d = diff_toml({"x": [1]}, {"y": [1]}, unordered=["x", "y"])
+    assert d.removed == [Removed("x", [1])]
+    assert d.added == [Added("y", [1])]
+    assert d.changed == []
+
+
+def test_unordered_quoted_key_syntax():
+    old = {"a.b": {"c": [1, 2]}}
+    new = {"a.b": {"c": [2, 1]}}
+    assert diff_toml(old, new, unordered=['"a.b".c']) == Diff([], [], [])
+
+
+def test_unordered_positional_ignore_unchanged():
+    old = {"a": 1, "b": 2}
+    new = {"a": 2, "b": 3}
+    assert diff_toml(old, new, ["a"]) == diff_toml(old, new, ignore=["a"], unordered=())

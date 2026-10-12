@@ -26,6 +26,13 @@ def _build_parser() -> argparse.ArgumentParser:
         metavar="PATH",
         help="dotted path to ignore (repeatable)",
     )
+    parser.add_argument(
+        "--unordered",
+        action="append",
+        default=[],
+        metavar="PATH",
+        help="dotted path whose arrays are compared as multisets (repeatable)",
+    )
     return parser
 
 
@@ -55,7 +62,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     except _FileError as exc:
         print(f"tomlcmp: {args.new}: {exc}", file=sys.stderr)
         return 2
-    diff = diff_toml(old, new, args.ignore)
+    diff = diff_toml(old, new, args.ignore, unordered=args.unordered)
     render = render_json if args.format == "json" else render_text
     sys.stdout.write(render(diff))
     return 1 if (diff.added or diff.removed or diff.changed) else 0
