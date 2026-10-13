@@ -19,7 +19,7 @@ pip install -e .
 ## Usage
 
 ```
-tomlcmp OLD NEW [--format text|json] [--ignore PATH]... [--unordered PATH]...
+tomlcmp OLD NEW [--format text|json] [--ignore PATH]... [--unordered PATH]... [--only KIND]...
 ```
 
 `old.toml`:
@@ -81,6 +81,29 @@ dependencies = ["c", "a", "b"]
 0 added, 0 removed, 0 changed
 ```
 
+### Only some kinds of change
+
+Use `--only` to report only added, removed or changed keys. Repeat the option or provide a comma-separated list to combine kinds. Unselected kinds are counted as 0 and do not affect the exit code.
+
+`tomlcmp old.toml new.toml --only added` prints exactly these lines and exits with code 1:
+
+```
++ project.requires-python = ">=3.11"
+1 added, 0 removed, 0 changed
+```
+
+`tomlcmp old.toml new.toml --only removed` prints exactly this line and exits with code 0:
+
+```
+0 added, 0 removed, 0 changed
+```
+
+An unknown kind, such as `Added`, is a usage error:
+
+```
+tomlcmp: --only: unknown kind "Added" (use added, removed or changed)
+```
+
 ### Library
 
 ```python
@@ -107,6 +130,7 @@ With the files above this prints `project.dependencies ['a', 'b'] ['a', 'b', 'c'
 | `--format text\|json` | Output format, default `text`. |
 | `--ignore PATH` | Dotted path to skip, repeatable. `project` skips `project.version` but not `project2.x`. Keys with characters other than `A-Za-z0-9_-` are JSON-quoted, e.g. `tool."a.b".x`. |
 | `--unordered PATH` | Repeatable. Compares the arrays at that path, or under that table, as multisets, ignoring element order. Same path rules as `--ignore`. |
+| `--only KIND` | Repeatable, comma lists allowed. Report only `added`, `removed` or `changed` keys; the other kinds count as 0 and do not set the exit code. |
 
 ### Exit codes
 
@@ -114,7 +138,7 @@ With the files above this prints `project.dependencies ['a', 'b'] ['a', 'b', 'c'
 |---|---|
 | `0` | No differences. |
 | `1` | Differences found. |
-| `2` | Usage error, or an unreadable or invalid file (`tomlcmp: <path>: <message>` on stderr). |
+| `2` | Usage error (including an unknown `--only` kind), or an unreadable or invalid file (`tomlcmp: <path>: <message>` on stderr). |
 
 ## Development
 
