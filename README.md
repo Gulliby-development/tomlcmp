@@ -19,7 +19,7 @@ pip install -e .
 ## Usage
 
 ```
-tomlcmp OLD NEW [--format text|json] [--ignore PATH]... [--unordered PATH]... [--only KIND]...
+tomlcmp OLD NEW [--format text|json] [--ignore PATH]... [--unordered PATH]... [--only KIND]... [-q | --quiet]
 ```
 
 `old.toml`:
@@ -104,6 +104,16 @@ An unknown kind, such as `Added`, is a usage error:
 tomlcmp: --only: unknown kind "Added" (use added, removed or changed)
 ```
 
+### Quiet mode
+
+Use `-q` or `--quiet` in a script that only needs to know whether two files differ. Nothing is printed to standard output, in either format, and the exit code is the same as without it (`0` for no differences, `1` for differences). It works together with `--ignore`, `--unordered` and `--only`, which still decide what counts as a difference. Errors (a usage error, an unreadable or invalid file) are still printed to standard error and exit with code 2.
+
+```sh
+if tomlcmp -q old.toml new.toml; then
+  echo "settings unchanged"
+fi
+```
+
 ### Library
 
 ```python
@@ -131,6 +141,7 @@ With the files above this prints `project.dependencies ['a', 'b'] ['a', 'b', 'c'
 | `--ignore PATH` | Dotted path to skip, repeatable. `project` skips `project.version` but not `project2.x`. Keys with characters other than `A-Za-z0-9_-` are JSON-quoted, e.g. `tool."a.b".x`. |
 | `--unordered PATH` | Repeatable. Compares the arrays at that path, or under that table, as multisets, ignoring element order. Same path rules as `--ignore`. |
 | `--only KIND` | Repeatable, comma lists allowed. Report only `added`, `removed` or `changed` keys; the other kinds count as 0 and do not set the exit code. |
+| `-q`, `--quiet` | Print nothing to standard output; the exit code alone tells whether the files differ. Errors are still printed to standard error. |
 
 ### Exit codes
 

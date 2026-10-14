@@ -198,6 +198,7 @@ def test_non_utf8_file(tmp_path, capsys):
     [
         ["a.toml", "b.toml", "--bogus"],
         ["a.toml", "b.toml", "--format", "xml"],
+        ["a.toml", "b.toml", "--quiet=yes"],
         ["a.toml", "b.toml", "--only"],
         ["a.toml"],
         [],

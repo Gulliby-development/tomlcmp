@@ -40,6 +40,9 @@ def _build_parser() -> argparse.ArgumentParser:
         metavar="KIND",
         help="report only added, removed, or changed keys (repeatable)",
     )
+    parser.add_argument(
+        "-q", "--quiet", action="store_true", help="suppress the comparison report"
+    )
     return parser
 
 
@@ -98,5 +101,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             changed=diff.changed if "changed" in selected_kinds else [],
         )
     render = render_json if args.format == "json" else render_text
-    sys.stdout.write(render(diff))
+    if not args.quiet:
+        sys.stdout.write(render(diff))
     return 1 if (diff.added or diff.removed or diff.changed) else 0
