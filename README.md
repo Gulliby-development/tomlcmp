@@ -19,7 +19,7 @@ pip install -e .
 ## Usage
 
 ```
-tomlcmp OLD NEW [--format text|json] [--ignore PATH]... [--unordered PATH]... [--only KIND]... [-q | --quiet]
+tomlcmp OLD NEW [--format text|json] [--ignore PATH]... [--unordered PATH]... [--only KIND]... [--tolerance NUMBER] [-q | --quiet]
 ```
 
 `old.toml`:
@@ -114,6 +114,43 @@ if tomlcmp -q old.toml new.toml; then
 fi
 ```
 
+### Number tolerance
+
+Use `--tolerance NUMBER` to ignore small numeric differences, for example rounding noise in generated files. Two numbers (integers or floats) are equal when they differ by at most NUMBER; the option applies to numbers inside arrays and tables too, and to the element matching of `--unordered`. Everything else is compared exactly as before.
+
+`old.toml`:
+
+```toml
+[server]
+timeout = 30.0
+ratio = 0.75
+retries = 3
+weights = [0.1, 0.2]
+```
+
+`new.toml`:
+
+```toml
+[server]
+timeout = 30.4
+ratio = 0.7501
+retries = 4
+weights = [0.1004, 0.25]
+```
+
+`tomlcmp old.toml new.toml --tolerance 0.5` prints exactly these lines and exits with code 1:
+
+```
+~ server.retries: 3 -> 4
+0 added, 0 removed, 1 changed
+```
+
+A value that is not a non-negative number is a usage error:
+
+```
+tomlcmp: --tolerance: invalid value "-1" (expected a non-negative number such as 0.001 or 1e-6)
+```
+
 ### Library
 
 ```python
@@ -141,6 +178,7 @@ With the files above this prints `project.dependencies ['a', 'b'] ['a', 'b', 'c'
 | `--ignore PATH` | Dotted path to skip, repeatable. `project` skips `project.version` but not `project2.x`. Keys with characters other than `A-Za-z0-9_-` are JSON-quoted, e.g. `tool."a.b".x`. |
 | `--unordered PATH` | Repeatable. Compares the arrays at that path, or under that table, as multisets, ignoring element order. Same path rules as `--ignore`. |
 | `--only KIND` | Repeatable, comma lists allowed. Report only `added`, `removed` or `changed` keys; the other kinds count as 0 and do not set the exit code. |
+| `--tolerance NUMBER` | Treat two numbers (integers or floats) as equal when they differ by at most NUMBER, a non-negative number such as `0.001` or `1e-6`. Applies inside arrays and tables and together with `--unordered`; without the option numbers must be exactly equal. |
 | `-q`, `--quiet` | Print nothing to standard output; the exit code alone tells whether the files differ. Errors are still printed to standard error. |
 
 ### Exit codes
