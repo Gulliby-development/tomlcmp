@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+import math
+import re
 import sys
 import tomllib
 from collections.abc import Sequence
@@ -41,6 +43,13 @@ def _build_parser() -> argparse.ArgumentParser:
         help="report only added, removed, or changed keys (repeatable)",
     )
     parser.add_argument(
+        "--tolerance",
+        action="append",
+        default=None,
+        metavar="NUMBER",
+        help="treat numbers that differ by at most NUMBER as equal",
+    )
+    parser.add_argument(
         "-q", "--quiet", action="store_true", help="suppress the comparison report"
     )
     return parser
@@ -60,6 +69,14 @@ def _parse_only(values: Sequence[str]) -> tuple[set[str] | None, str | None]:
                 )
             selected.add(kind)
     return selected, None
+
+
+def _print_tolerance_error(value: str) -> None:
+    print(
+        f'tomlcmp: --tolerance: invalid value "{value}" '
+        "(expected a non-negative number such as 0.001 or 1e-6)",
+        file=sys.stderr,
+    )
 
 
 class _FileError(Exception):
@@ -83,6 +100,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(only_error, file=sys.stderr)
         return 2
 
+    tolerance = None
+    if args.tolerance:
+        raw_tolerance = args.tolerance[-1]
+        if not re.fullmatch(r"[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?", raw_tolerance):
+            _print_tolerance_error(raw_tolerance)
+            return 2
+        tolerance = float(raw_tolerance)
+        if not math.isfinite(tolerance):
+            _print_tolerance_error(raw_tolerance)
+            return 2
+
     try:
         old = _load(args.old)
     except _FileError as exc:
@@ -93,7 +121,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     except _FileError as exc:
         print(f"tomlcmp: {args.new}: {exc}", file=sys.stderr)
         return 2
-    diff = diff_toml(old, new, args.ignore, unordered=args.unordered)
+    diff = diff_toml(
+        old, new, args.ignore, unordered=args.unordered, tolerance=tolerance
+    )
     if selected_kinds is not None:
         diff = Diff(
             added=diff.added if "added" in selected_kinds else [],

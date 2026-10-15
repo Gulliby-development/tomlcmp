@@ -206,7 +206,7 @@ def test_readme_documents_quiet_mode() -> None:
 
     usage = (
         "tomlcmp OLD NEW [--format text|json] [--ignore PATH]... "
-        "[--unordered PATH]... [--only KIND]... [-q | --quiet]"
+        "[--unordered PATH]... [--only KIND]... [--tolerance NUMBER] [-q | --quiet]"
     )
     quiet_option = (
         "| `-q`, `--quiet` | Print nothing to standard output; the exit code alone "
