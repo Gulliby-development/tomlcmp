@@ -50,7 +50,7 @@ requires-python = ">=3.11"
 1 added, 0 removed, 2 changed
 ```
 
-`+` is an added key, `-` a removed one, `~` a changed one. It also runs as `python -m tomlcmp old.toml new.toml`. With `--format json` the same result is printed as JSON.
+`+` is an added key, `-` a removed one, `~` a changed one. It also runs as `python -m tomlcmp old.toml new.toml`. With `--format json` the same result is printed as JSON. Floats that JSON cannot hold (`nan`, `inf` and `-inf` in TOML) are written as the strings `"nan"`, `"inf"` and `"-inf"`, also inside arrays and tables.
 
 ### Reordered arrays
 

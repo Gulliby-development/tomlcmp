@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import datetime
 import json
+import math
 
 from tomlcmp.diff import Diff
 
@@ -13,6 +14,19 @@ def iso_default(obj: object) -> str:
     if isinstance(obj, (datetime.datetime, datetime.date, datetime.time)):
         return obj.isoformat()
     raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
+
+def _json_safe(value: object) -> object:
+    if isinstance(value, float):
+        if math.isnan(value):
+            return "nan"
+        if math.isinf(value):
+            return "inf" if value > 0 else "-inf"
+    elif isinstance(value, list):
+        return [_json_safe(item) for item in value]
+    elif isinstance(value, dict):
+        return {key: _json_safe(item) for key, item in value.items()}
+    return value
 
 
 def _value(value: object) -> str:
@@ -37,8 +51,11 @@ def render_text(diff: Diff) -> str:
 
 def render_json(diff: Diff) -> str:
     payload = {
-        "added": [{"path": a.path, "value": a.value} for a in diff.added],
-        "removed": [{"path": r.path, "value": r.value} for r in diff.removed],
-        "changed": [{"path": c.path, "old": c.old, "new": c.new} for c in diff.changed],
+        "added": [{"path": a.path, "value": _json_safe(a.value)} for a in diff.added],
+        "removed": [{"path": r.path, "value": _json_safe(r.value)} for r in diff.removed],
+        "changed": [
+            {"path": c.path, "old": _json_safe(c.old), "new": _json_safe(c.new)}
+            for c in diff.changed
+        ],
     }
-    return json.dumps(payload, indent=2, default=iso_default) + "\n"
+    return json.dumps(payload, indent=2, default=iso_default, allow_nan=False) + "\n"
