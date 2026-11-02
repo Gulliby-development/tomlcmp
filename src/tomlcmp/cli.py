@@ -10,7 +10,7 @@ import tomllib
 from collections.abc import Sequence
 
 from tomlcmp.diff import Diff, diff_toml
-from tomlcmp.render import render_json, render_text
+from tomlcmp.render import render_json, render_summary_json, render_summary_text, render_text
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -51,6 +51,11 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "-q", "--quiet", action="store_true", help="suppress the comparison report"
+    )
+    parser.add_argument(
+        "--summary",
+        action="store_true",
+        help="print only the counts of added, removed and changed keys",
     )
     return parser
 
@@ -130,7 +135,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             removed=diff.removed if "removed" in selected_kinds else [],
             changed=diff.changed if "changed" in selected_kinds else [],
         )
-    render = render_json if args.format == "json" else render_text
+    if args.summary:
+        render = render_summary_json if args.format == "json" else render_summary_text
+    else:
+        render = render_json if args.format == "json" else render_text
     if not args.quiet:
         sys.stdout.write(render(diff))
     return 1 if (diff.added or diff.removed or diff.changed) else 0
