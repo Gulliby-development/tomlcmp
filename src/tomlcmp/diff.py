@@ -36,6 +36,15 @@ class Diff:
     removed: list[Removed] = field(default_factory=list)
     changed: list[Changed] = field(default_factory=list)
 
+    @property
+    def counts(self) -> dict[str, int]:
+        """The number of added, removed and changed keys."""
+        return {
+            "added": len(self.added),
+            "removed": len(self.removed),
+            "changed": len(self.changed),
+        }
+
 
 def _format_key(key: str) -> str:
     if _BARE_KEY.fullmatch(key):

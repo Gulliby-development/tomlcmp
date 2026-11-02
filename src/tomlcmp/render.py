@@ -45,8 +45,21 @@ def render_text(diff: Diff) -> str:
         lines.append((c.path, f"~ {c.path}: {_value(c.old)} -> {_value(c.new)}"))
     lines.sort(key=lambda item: item[0])
     out = [text for _, text in lines]
-    out.append(f"{len(diff.added)} added, {len(diff.removed)} removed, {len(diff.changed)} changed")
+    out.append(_counts(diff))
     return "\n".join(out) + "\n"
+
+
+def _counts(diff: Diff) -> str:
+    counts = diff.counts
+    return f"{counts['added']} added, {counts['removed']} removed, {counts['changed']} changed"
+
+
+def render_summary_text(diff: Diff) -> str:
+    return _counts(diff) + "\n"
+
+
+def render_summary_json(diff: Diff) -> str:
+    return json.dumps(diff.counts, indent=2) + "\n"
 
 
 def render_json(diff: Diff) -> str:

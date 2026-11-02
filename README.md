@@ -19,7 +19,7 @@ pip install -e .
 ## Usage
 
 ```
-tomlcmp OLD NEW [--format text|json] [--ignore PATH]... [--unordered PATH]... [--only KIND]... [--tolerance NUMBER] [-q | --quiet]
+tomlcmp OLD NEW [--format text|json] [--ignore PATH]... [--unordered PATH]... [--only KIND]... [--tolerance NUMBER] [-q | --quiet] [--summary]
 ```
 
 `old.toml`:
@@ -151,6 +151,26 @@ A value that is not a non-negative number is a usage error:
 tomlcmp: --tolerance: invalid value "-1" (expected a non-negative number such as 0.001 or 1e-6)
 ```
 
+### Summary only
+
+Use `--summary` to print only the counts, without the list of keys. In text format the output is the last line of the normal report; with `--format json` it is an object with the three counts. The exit code is the same as without the option, `--only`, `--ignore` and `--tolerance` still decide what is counted, and `-q` still silences everything.
+
+`tomlcmp old.toml new.toml --summary` prints exactly this line and exits with code 1:
+
+```
+1 added, 0 removed, 2 changed
+```
+
+`tomlcmp old.toml new.toml --summary --format json` prints exactly these lines and exits with code 1:
+
+```json
+{
+  "added": 1,
+  "removed": 0,
+  "changed": 2
+}
+```
+
 ### Library
 
 ```python
@@ -168,7 +188,7 @@ for change in result.changed:
     print(change.path, change.old, change.new)
 ```
 
-With the files above this prints `project.dependencies ['a', 'b'] ['a', 'b', 'c']`. `diff_toml` returns a frozen `Diff` with sorted lists `added`, `removed` and `changed`; `flatten` turns a table into dotted paths.
+With the files above this prints `project.dependencies ['a', 'b'] ['a', 'b', 'c']`. `diff_toml` returns a frozen `Diff` with sorted lists `added`, `removed` and `changed`; `flatten` turns a table into dotted paths. `Diff.counts` is a dictionary with the number of `added`, `removed` and `changed` keys, the numbers that `--summary` prints.
 
 ### Options
 
@@ -180,6 +200,7 @@ With the files above this prints `project.dependencies ['a', 'b'] ['a', 'b', 'c'
 | `--only KIND` | Repeatable, comma lists allowed. Report only `added`, `removed` or `changed` keys; the other kinds count as 0 and do not set the exit code. |
 | `--tolerance NUMBER` | Treat two numbers (integers or floats) as equal when they differ by at most NUMBER, a non-negative number such as `0.001` or `1e-6`. Applies inside arrays and tables and together with `--unordered`; without the option numbers must be exactly equal. |
 | `-q`, `--quiet` | Print nothing to standard output; the exit code alone tells whether the files differ. Errors are still printed to standard error. |
+| `--summary` | Print only the counts of added, removed and changed keys (a JSON object with `--format json`). |
 
 ### Exit codes
 
